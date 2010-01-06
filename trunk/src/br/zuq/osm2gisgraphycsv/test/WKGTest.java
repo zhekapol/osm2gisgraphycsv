@@ -7,7 +7,7 @@ package br.zuq.osm2gisgraphycsv.test;
 
 import br.zuq.osm2gisgraphycsv.GisgraphyCSVEncoder;
 import br.zuq.osm2gisgraphycsv.xml.OSM;
-import br.zuq.osm2gisgraphycsv.xml.OSMParser;
+import br.zuq.osm2gisgraphycsv.xml.parser.OSMParser;
 
 /**
  *
