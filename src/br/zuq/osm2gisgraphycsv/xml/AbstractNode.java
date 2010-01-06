@@ -14,7 +14,9 @@ public class AbstractNode {
     public String user;
     public String uid;
 
-    public AbstractNode(String id, String visible, String timestamp, String version, String changeset, String user, String uid) {
+    public AbstractNode(String id, String visible, String timestamp, 
+            String version, String changeset, String user, String uid) {
+
         this.id = id;
         this.visible = visible;
         this.timestamp = timestamp;
@@ -22,5 +24,6 @@ public class AbstractNode {
         this.changeset = changeset;
         this.user = user;
         this.uid = uid;
+        
     }
 }
