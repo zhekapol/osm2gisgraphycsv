@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import br.zuq.osm2gisgraphycsv.util.LatLongUtil;
 import br.zuq.osm2gisgraphycsv.xml.OSM;
+import com.vividsolutions.jts.geom.PrecisionModel;
 
 /**
  *
@@ -21,7 +22,6 @@ import br.zuq.osm2gisgraphycsv.xml.OSM;
 public class GisgraphyCSVEncoder {
 
     // Public Methods ----------------------------------------------------------
-    
     public static String encode(List<CSVItem> list) {
         StringBuffer buffer;
 
@@ -44,13 +44,20 @@ public class GisgraphyCSVEncoder {
 
             if (way.isHighway()) {
 
+                String oneway = "false";
+                if (getTagValue("oneway", way.tags) != null
+                        && getTagValue("oneway", way.tags).equals("yes")) {
+
+                    oneway = "true";
+                }
+
                 item = new CSVItem(way.id,
                         getTagValue("name", way.tags),
                         wayMiddle(way.nodes),
                         wayLength(way.nodes),
                         "BR", "",
                         getTagValue("highway", way.tags),
-                        "",
+                        oneway,
                         shape(way.nodes));
 
                 list.add(item);
@@ -69,7 +76,6 @@ public class GisgraphyCSVEncoder {
     }
 
     // Private Methods ---------------------------------------------------------
-
     private static String wayLength(List<OSMNode> nodes) {
         double length = 0d;
         OSMNode n1, n2;
@@ -99,9 +105,12 @@ public class GisgraphyCSVEncoder {
         distance = 0d;
 
         for (int i = 0; i < nodes.size() - 1; i++) {
+
             n1 = nodes.get(i);
             n2 = nodes.get(i + 1);
 
+            System.out.println(n1.lat + ", " + n1.lon);
+            System.out.println(n2.lat + ", " + n2.lon);
             lineDistance = lineDistance(n1, n2);
 
             if ((distance + lineDistance) > lenMiddle) {
@@ -112,26 +121,44 @@ public class GisgraphyCSVEncoder {
             distance += lineDistance;
         }
 
-        double lat = (Double.parseDouble(n2.lat) + Double.parseDouble(n1.lat)) * distance;
-        double lon = (Double.parseDouble(n2.lon) + Double.parseDouble(n1.lon)) * distance;
+        double lat = Double.parseDouble(n2.lat);
+        double lon = Double.parseDouble(n2.lon);
 
-        return WKBWriter.bytesToHex(new WKBWriter().write(
-                fac.createPoint(new Coordinate(lon, lat))));
+        if (distance > 0.0d) {
+            distance = (1 / distance);
+
+            //   System.out.println(distance + "\t" + n2.lat + "\t" + n1.lat);
+
+            // Baseado na prova do ponto médio
+            lat = (Double.parseDouble(n2.lat) + (distance - 1) * Double.parseDouble(n1.lat)) / distance;
+            lon = (Double.parseDouble(n2.lon) + (distance - 1) * Double.parseDouble(n1.lon)) / distance;
+        }
+
+        System.out.println(lat + ", " + lon);
+
+        return WKBWriter.bytesToHex(
+                new WKBWriter().write(fac.createPoint(new Coordinate(lon, lat))));
     }
 
     private static String getTagValue(String key, List<Tag> tags) {
         for (Tag tag : tags) {
             if (tag.k.equals(key)) {
                 return tag.v;
+
+
             }
         }
         return "";
+
+
     }
 
     private static Double lineDistance(OSMNode n1, OSMNode n2) {
         return LatLongUtil.distance(
                 Double.parseDouble(n1.lat), Double.parseDouble(n1.lon),
                 Double.parseDouble(n2.lat), Double.parseDouble(n2.lon));
+
+
     }
 
     private static String shape(List<OSMNode> nodes) throws Exception {
@@ -139,11 +166,14 @@ public class GisgraphyCSVEncoder {
         GeometryFactory fac;
 
         coords = new ArrayList<LineString>();
-        fac = new GeometryFactory();
+        fac = new GeometryFactory(new PrecisionModel(0.001), 4326);
 
         OSMNode n1, n2;
         Coordinate c1, c2;
-        for (int i = 0; i < nodes.size() - 1; i++) {
+
+
+        for (int i = 0; i
+                < nodes.size() - 1; i++) {
             n1 = nodes.get(i);
             n2 = nodes.get(i + 1);
 
@@ -151,12 +181,17 @@ public class GisgraphyCSVEncoder {
             c2 = new Coordinate(Double.parseDouble(n2.lon), Double.parseDouble(n2.lat));
 
             coords.add(fac.createLineString(new Coordinate[]{c1, c2}));
+
+
         }
 
         MultiLineString mls;
 
         mls = fac.createMultiLineString(coords.toArray(new LineString[0]));
 
+
+
         return WKBWriter.bytesToHex(new WKBWriter().write(mls));
+
     }
 }
