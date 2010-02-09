@@ -22,6 +22,7 @@ import com.vividsolutions.jts.geom.PrecisionModel;
 public class GisgraphyCSVEncoder {
 
     // Public Methods ----------------------------------------------------------
+
     public static String encode(List<CSVItem> list) {
         StringBuffer buffer;
 
@@ -76,6 +77,7 @@ public class GisgraphyCSVEncoder {
     }
 
     // Private Methods ---------------------------------------------------------
+
     private static String wayLength(List<OSMNode> nodes) {
         double length = 0d;
         OSMNode n1, n2;
